@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ISBN Scanner</title>
+
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+
+<style>
+body{
+font-family:sans-serif;
+text-align:center;
+}
+
+video{
+width:90%;
+max-width:400px;
+border:1px solid black;
+}
+
+#result{
+margin-top:20px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>ISBNスキャナー</h2>
+
+<video id="video"></video>
+
+<div id="result">
+<p>スキャン結果</p>
+</div>
+
+<script>
+
+const codeReader = new ZXing.BrowserBarcodeReader()
+const video = document.getElementById("video")
+const resultDiv = document.getElementById("result")
+
+codeReader.decodeFromVideoDevice(null, video, (result, err) => {
+
+if(result){
+
+const isbn = result.text
+
+resultDiv.innerHTML =
+"<p>ISBN: "+isbn+"</p><p>書籍情報取得中...</p>"
+
+getBook(isbn)
+
+codeReader.reset()
+
+}
+
+})
+
+async function getBook(isbn){
+
+try{
+
+const res = await fetch(
+"https://api.openbd.jp/v1/get?isbn="+isbn
+)
+
+const data = await res.json()
+
+if(!data[0]){
+
+resultDiv.innerHTML += "<p>書籍情報なし</p>"
+return
+
+}
+
+const book = data[0].summary
+
+resultDiv.innerHTML = `
+<p>ISBN: ${isbn}</p>
+<p>書名: ${book.title}</p>
+<p>著者: ${book.author}</p>
+<p>出版社: ${book.publisher}</p>
+`
+
+}catch(e){
+
+resultDiv.innerHTML += "<p>取得エラー</p>"
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
